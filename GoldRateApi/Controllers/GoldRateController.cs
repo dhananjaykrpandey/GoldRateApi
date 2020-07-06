@@ -18,15 +18,15 @@ namespace GoldRateApi.Controllers
     {
         private readonly ILogger<GoldRateController> _logger;
         private readonly DbGoldRateContext dbGoldRateContext;
-       // private readonly String websiteUrl = "https://dubaicityofgold.com/";
+        // private readonly String websiteUrl = "https://dubaicityofgold.com/";
         // Constructor
-        public GoldRateController(ILogger<GoldRateController> logger,DbGoldRateContext _dbGoldRateContext)
+        public GoldRateController(ILogger<GoldRateController> logger, DbGoldRateContext _dbGoldRateContext)
         {
             _logger = logger;
             dbGoldRateContext = _dbGoldRateContext;
         }
         [HttpGet("{Country}")]
-        public async Task<JsonResult> Get(string Country,string Currency="")
+        public async Task<JsonResult> Get(string Country, string Currency = "")
         {
 
             Dictionary<string, object> error = new Dictionary<string, object>();
@@ -121,7 +121,82 @@ namespace GoldRateApi.Controllers
              */
             await GetPageDataGLNW(url, dyGoldRate);
 
-            
+
+
+            DateTime currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Arabian Standard Time"));
+            DateTime DtpMorningTime = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 09, 00, 00);
+            DateTime DtpLunchTime = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 15, 00, 00);
+            DateTime DtpEveningTime = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 19, 00, 00);
+            DateTime DtpMidNightTime = new DateTime(currentTime.Year, currentTime.Month, currentTime.Day, 23, 59, 00);
+
+            var mCurrentDateGoldRate = dbGoldRateContext.mGoldRates.AsEnumerable().Where(mg => mg.UpdatedDateTime.Value !=null && mg.UpdatedDateTime.HasValue==true  &&  mg.UpdatedDateTime.Value.ToLongDateString() == currentTime.ToLongDateString()).ToList();
+
+            if (currentTime >= DtpMorningTime && currentTime < DtpLunchTime)
+            {
+                if (mCurrentDateGoldRate.Count <= 0)
+                {
+                    foreach (var item in dyGoldRate)
+                    {
+                        dbGoldRateContext.mGoldRates.Add(item as mGoldRate);
+                    }
+                }
+                else
+                {
+                    foreach (mGoldRate item in dyGoldRate)
+                    {
+                        mGoldRate CrGold = mCurrentDateGoldRate.Where(cr => cr.GoldCarat == item.GoldCarat && cr.GoldPriceMorning == 0 && cr.GoldPriceYesterday == 0).FirstOrDefault();
+                        if (CrGold == null || CrGold.iID <= 0) { continue; }
+                        CrGold.GoldPriceMorning = item.GoldPriceMorning;
+                        dbGoldRateContext.mGoldRates.Add(CrGold);
+                    }
+                }
+                if (dbGoldRateContext.mGoldRates.Count() > 0)
+                {
+                    dbGoldRateContext.SaveChanges();
+                }
+
+            }
+            else if (currentTime >= DtpLunchTime && currentTime < DtpEveningTime)
+            {
+                foreach (mGoldRate item in dyGoldRate)
+                {
+                    mGoldRate CrGold = mCurrentDateGoldRate.Where(cr => cr.GoldCarat == item.GoldCarat && cr.GoldPriceAfternoon == 0).FirstOrDefault();
+                    if (CrGold == null || CrGold.iID <= 0) { continue; }
+                    CrGold.GoldPriceAfternoon = item.GoldPriceAfternoon;
+                    dbGoldRateContext.mGoldRates.Add(CrGold);
+                }
+                if (dbGoldRateContext.mGoldRates.Count() > 0)
+                {
+                    dbGoldRateContext.SaveChanges();
+                }
+            }
+            else if (currentTime >= DtpEveningTime && currentTime < DtpMidNightTime)
+            {
+                foreach (mGoldRate item in dyGoldRate)
+                {
+                    mGoldRate CrGold = mCurrentDateGoldRate.Where(cr => cr.GoldCarat == item.GoldCarat && cr.GoldPriceEvening == 0).FirstOrDefault();
+                    if (CrGold == null || CrGold.iID <= 0) { continue; }
+                    CrGold.GoldPriceEvening = item.GoldPriceEvening;
+                    dbGoldRateContext.mGoldRates.Add(CrGold);
+                }
+                if (dbGoldRateContext.mGoldRates.Count() > 0)
+                {
+                    dbGoldRateContext.SaveChanges();
+                }
+
+            }
+            //else if (currentTime > (DtpMidNightTime.AddDays(-1)) && currentTime < DtpMorningTime)
+            //{
+            //    foreach (var item in dyGoldRate)
+            //    {
+            //        dbGoldRateContext.mGoldRates.Add(item as mGoldRate);
+            //    }
+            //    if (dbGoldRateContext.mGoldRates.Count() > 0)
+            //    {
+            //        dbGoldRateContext.SaveChanges();
+            //    }
+
+            //}
 
             return Json(dyGoldRate.ToList());
 
@@ -201,7 +276,7 @@ namespace GoldRateApi.Controllers
             // TODO: Diff the data
         }
 
-        private async Task<JsonResult>  UpdateUAEGoldRate()
+        private async Task<JsonResult> UpdateUAEGoldRate()
         {
             return await CheckForUpdatesGLNW("https://gulfnews.com/gold-forex", "Web-Scraper updates");
         }
