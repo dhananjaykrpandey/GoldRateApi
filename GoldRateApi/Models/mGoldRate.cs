@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace GoldRateApi.Models
 {
+    [Table("T_UaeGoldRate")]
     public class mGoldRate
     {
         [Key]
@@ -16,14 +17,14 @@ namespace GoldRateApi.Models
         public int iID { get; set; }
         [Column(name:"cGoldCarat", TypeName ="Varchar(20)",Order =1)]
         public string GoldCarat { get; set; }
-        [Column(name: "rGoldPriceMorning", TypeName = "decimal(9,3)", Order = 2)]
-        public decimal GoldPriceMorning { get; set; }
-        [Column(name: "rGoldPriceAfternoon", TypeName = "decimal(9,3)", Order = 2)]
-        public decimal GoldPriceAfternoon { get; set; }
-        [Column(name: "rGoldPriceEvening", TypeName = "decimal(9,3)", Order = 2)]
-        public decimal GoldPriceEvening { get; set; }
-        [Column(name: "rGoldPriceYesterday", TypeName = "decimal(9,3)", Order = 2)]
-        public decimal GoldPriceYesterday { get; set; }
+        [Column(name: "rGoldPriceMorning", TypeName = "numeric(9,3)", Order = 2)]
+        public double GoldPriceMorning { get; set; }
+        [Column(name: "rGoldPriceAfternoon", TypeName = "numeric(9,3)", Order = 2)]
+        public double GoldPriceAfternoon { get; set; }
+        [Column(name: "rGoldPriceEvening", TypeName = "numeric(9,3)", Order = 2)]
+        public double GoldPriceEvening { get; set; }
+        [Column(name: "rGoldPriceYesterday", TypeName = "numeric(9,3)", Order = 2)]
+        public double GoldPriceYesterday { get; set; }
         [Column(name: "dUpdatedDateTime", TypeName = "datetime", Order = 3)]
         public DateTime? UpdatedDateTime { get; set; }
     }
